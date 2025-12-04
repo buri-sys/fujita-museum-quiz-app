@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUJITA MUSEUM QUIZ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f4f4; /* 和紙のような白 */
+            --text-color: #333;
+            --accent-color: #8c7b75; /* 落ち着いた土壁色 */
+            --correct-color: #4CAF50;
+            --wrong-color: #e57373;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Noto Serif JP', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        /* カードデザイン */
+        .card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 2px; /* 角を丸くしすぎない和風モダン */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: opacity 0.3s ease;
+        }
+
+        h1 {
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+        }
+
+        .description {
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            color: #666;
+        }
+
+        /* ボタン */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: transparent;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s;
+            text-align: left;
+            position: relative;
+        }
+
+        .btn:hover {
+            background-color: #f9f9f9;
+            border-color: var(--accent-color);
+        }
+
+        .btn.start-btn, .btn.next-btn {
+            background-color: var(--text-color);
+            color: #fff;
+            text-align: center;
+            border: none;
+            margin-top: 20px;
+        }
+
+        .btn.start-btn:hover, .btn.next-btn:hover {
+            background-color: var(--accent-color);
+            opacity: 0.9;
+        }
+
+        /* クイズ画面 */
+        .quiz-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        /* 結果表示装飾 */
+        .btn.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+        }
+
+        .btn.wrong {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+        }
+
+        .explanation-box {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f8f8;
+            border-left: 4px solid var(--accent-color);
+            text-align: left;
+            font-size: 0.9rem;
+            display: none; /* 初期は非表示 */
+        }
+        
+        .explanation-title {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: var(--accent-color);
+        }
+
+        .source-tag {
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 5px;
+            display: block;
+            text-align: right;
+        }
+
+        /* 画面切り替え用 */
+        .hidden {
+            display: none;
+        }
+
+        /* 結果画面のスコア */
+        .score-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen" class="card">
+        <h1>FUJITA MUSEUM</h1>
+        <h2>ART KNOWLEDGE QUIZ</h2>
+        <p class="description">
+            藤田美術館のコレクション、歴史、建築、そして「蔵出50選」や「ART TALK」からランダムに出題。<br>
+            あなたの知識を深める旅を始めましょう。
+        </p>
+        <button class="btn start-btn" onclick="startQuiz()">クイズを開始する</button>
+    </div>
+
+    <div id="quiz-screen" class="card hidden">
+        <div class="quiz-meta">
+            <span id="question-count">Q 1 / 10</span>
+            <span id="category-badge">CATEGORY</span>
+        </div>
+        <div class="question-text" id="question-text">
+            ここに問題文が表示されます。
+        </div>
+        <div id="answer-buttons">
+            </div>
+
+        <div id="explanation-area" class="explanation-box">
+            <span class="explanation-title">解説</span>
+            <span id="explanation-text"></span>
+            <span id="source-ref" class="source-tag"></span>
+        </div>
+
+        <button id="next-btn" class="btn next-btn hidden" onclick="nextQuestion()">次の問題へ</button>
+    </div>
+
+    <div id="result-screen" class="card hidden">
+        <h2>RESULT</h2>
+        <div class="score-display" id="final-score">0 / 10</div>
+        <p id="result-comment" class="description">コメント</p>
+        <button class="btn start-btn" onclick="location.reload()">もう一度挑戦する</button>
+    </div>
+</div>
+
+<script>
+    /**
+     * 【問題データベース】
+     * 500問への拡張: この配列に同じ形式でデータを追加してください。
+     * カテゴリ例: '蔵出50選', 'ART TALK', '入門50選', '建築', '歴史', '茶道'
+     */
+    const questionStock = [
+        {
+            category: '国宝・コレクション',
+            question: '藤田美術館が所蔵する国宝の一つで、世界に3点しか現存しないと言われる茶碗の通称は？',
+            answers: ['油滴天目茶碗', '木葉天目茶碗', '曜変天目茶碗', '玳皮天目茶碗'],
+            correct: 2, // インデックス番号(0始まり)
+            explanation: '藤田美術館所蔵の「曜変天目茶碗」は国宝。瑠璃色の斑紋が星のように輝く美しさが特徴で、完全な形で現存するのは世界でわずか3点のみです。',
+            source: '所蔵品データベース'
+        },
+        {
+            category: '歴史・人物',
+            question: '藤田美術館の礎となるコレクションを築いた、明治時代の実業家・藤田傳三郎の号（茶人としての名）は？',
+            answers: ['鈍翁', '香雪', '香魚', '耳庵'],
+            correct: 1,
+            explanation: '藤田傳三郎は「香雪（こうせつ）」と号しました。ちなみに鈍翁は益田孝、耳庵は松永安左エ門です。',
+            source: '美術館の歴史'
+        },
+        {
+            category: '建築・施設',
+            question: '2022年にリニューアルオープンした藤田美術館。展示室の入り口に使用されている、かつての蔵の部材は何？',
+            answers: ['瓦', '土壁', '蔵の扉', '梁（はり）'],
+            correct: 2,
+            explanation: '旧藤田邸の蔵で使用されていた重厚な「蔵の扉」が、そのまま新しい美術館の展示室への入り口として継承されています。',
+            source: '建築・施設紹介'
+        },
+        {
+            category: 'ART TALK',
+            question: 'Webコンテンツ「ART TALK」にて、学芸員が解説する「茶杓（ちゃしゃく）」の見どころとして、最も重視されるポイントの一つは？',
+            answers: ['金箔の量', '竹の節（ふし）の位置や景色', '重さ', '制作された年号の刻印'],
+            correct: 1,
+            explanation: '茶杓は竹の「節」の位置や、景色（模様や傷など）が大きな見どころとなります。これをどう活かすかに作者の美意識が宿ります。',
+            source: 'ART TALK'
+        },
+        {
+            category: '蔵出50選',
+            question: '「蔵出50選」で紹介される、快慶作の「地蔵菩薩立像」。この像の際立った特徴として正しいものは？',
+            answers: ['衣の彩色に截金（きりかね）文様が施されている', '純金で作られている', '高さが3メートルある', '未完成である'],
+            correct: 0,
+            explanation: '快慶の作品の特徴である、繊細で美しい「截金（きりかね）」文様が衣に残っていることが大きな見どころです。',
+            source: '蔵出50選'
+        },
+        {
+            category: '入門50選',
+            question: '「入門50選」において、茶道で使われる「香合（こうごう）」とは、何を入れるための道具？',
+            answers: ['抹茶', 'お菓子', 'お香', '水'],
+            correct: 2,
+            explanation: '香合は、炭手前の際に炭と共にくべる「お香」を入れておくための小さな容器です。',
+            source: '入門50選'
+        },
+        {
+            category: '館長藤田のアート探訪',
+            question: '館長によるコラムで度々触れられる、藤田美術館が目指す展示環境のコンセプトに近い表現は？',
+            answers: ['解説パネルを多用した学習空間', 'ガラスのない直の展示', '暗闇の中でライトアップする演出', '自然光を取り入れた「開かれた蔵」'],
+            correct: 3,
+            explanation: '新しい藤田美術館は、閉ざされた蔵ではなく、自然光や外気を感じられるような開放的な空間でありながら、蔵の機能を果たす「開かれた蔵」を目指しています。',
+            source: '館長藤田のアート探訪'
+        },
+        {
+            category: '茶道具',
+            question: '藤田美術館が所蔵する野々村仁清作の有名な色絵陶器はどれ？',
+            answers: ['色絵雉香炉', '色絵藤花茶壺', '色絵月梅図茶壺', '色絵若松図茶壺'],
+            correct: 1,
+            explanation: '国宝「色絵藤花茶壺（いろえふじはなちゃつぼ）」は野々村仁清の最高傑作の一つで、藤田美術館を代表する名品です。',
+            source: '所蔵品紹介'
+        },
+        {
+            category: '利用案内',
+            question: '藤田美術館のエントランスにある「あみじま茶屋」。ここで提供されているお茶とお団子のセットで、団子の特徴は？',
+            answers: ['その場で焼いて提供される', '冷凍で持ち帰り専用', '金箔が乗っている', '非常に大きい'],
+            correct: 0,
+            explanation: 'あみじま茶屋では、注文を受けてから目の前で団子を焼き、温かい状態で提供しています。',
+            source: 'あみじま茶屋'
+        },
+        {
+            category: '日本美術史',
+            question: '藤田美術館所蔵の「玄奘三蔵絵」は、誰の生涯を描いた絵巻物？',
+            answers: ['空海', '聖徳太子', '玄奘（三蔵法師）', '千利休'],
+            correct: 2,
+            explanation: '「玄奘三蔵絵」は、中国・唐の僧侶で「西遊記」のモデルにもなった玄奘（三蔵法師）の旅と生涯を描いた国宝の絵巻です。',
+            source: 'コレクション'
+        },
+        /* ★ここにデータを追加していくことで500問まで増やせます。
+           AIに「藤田美術館に関するクイズをこのJSON形式で作成して」と依頼すると効率的です。
+        */
+    ];
+
+    // 設定
+    const QUESTION_LIMIT = 10; // 1回の出題数
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    // 要素の取得
+    const startScreen = document.getElementById('start-screen');
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultScreen = document.getElementById('result-screen');
+    
+    const questionCountEl = document.getElementById('question-count');
+    const categoryBadgeEl = document.getElementById('category-badge');
+    const questionTextEl = document.getElementById('question-text');
+    const answerButtonsEl = document.getElementById('answer-buttons');
+    const explanationArea = document.getElementById('explanation-area');
+    const explanationText = document.getElementById('explanation-text');
+    const sourceRef = document.getElementById('source-ref');
+    const nextBtn = document.getElementById('next-btn');
+    const finalScoreEl = document.getElementById('final-score');
+    const resultCommentEl = document.getElementById('result-comment');
+
+    // クイズ開始処理
+    function startQuiz() {
+        startScreen.classList.add('hidden');
+        resultScreen.classList.add('hidden');
+        quizScreen.classList.remove('hidden');
+        
+        // ストックからランダムに10問選出
+        currentQuestions = getRandomQuestions(questionStock, QUESTION_LIMIT);
+        currentQuestionIndex = 0;
+        score = 0;
+        
+        loadQuestion();
+    }
+
+    // 問題読み込み
+    function loadQuestion() {
+        resetState();
+        const currentData = currentQuestions[currentQuestionIndex];
+        
+        questionCountEl.textContent = `Q ${currentQuestionIndex + 1} / ${QUESTION_LIMIT}`;
+        categoryBadgeEl.textContent = currentData.category;
+        questionTextEl.textContent = currentData.question;
+
+        // 選択肢の生成
+        currentData.answers.forEach((answer, index) => {
+            const button = document.createElement('button');
+            button.innerText = answer;
+            button.classList.add('btn');
+            button.addEventListener('click', () => selectAnswer(index, currentData.correct));
+            answerButtonsEl.appendChild(button);
+        });
+    }
+
+    // 状態リセット
+    function resetState() {
+        nextBtn.classList.add('hidden');
+        explanationArea.style.display = 'none';
+        while (answerButtonsEl.firstChild) {
+            answerButtonsEl.removeChild(answerButtonsEl.firstChild);
+        }
+    }
+
+    // 回答選択処理
+    function selectAnswer(selectedIndex, correctIndex) {
+        const buttons = answerButtonsEl.children;
+        const currentData = currentQuestions[currentQuestionIndex];
+
+        // 全ボタンを無効化
+        Array.from(buttons).forEach(btn => btn.disabled = true);
+
+        // 正誤判定と色付け
+        if (selectedIndex === correctIndex) {
+            buttons[selectedIndex].classList.add('correct');
+            score++;
+        } else {
+            buttons[selectedIndex].classList.add('wrong');
+            buttons[correctIndex].classList.add('correct'); // 正解を表示
+        }
+
+        // 解説表示
+        explanationText.textContent = currentData.explanation;
+        sourceRef.textContent = `Source: ${currentData.source}`;
+        explanationArea.style.display = 'block';
+
+        // 次へボタン表示
+        nextBtn.classList.remove('hidden');
+        
+        // 最後の問題の場合はボタンテキスト変更
+        if (currentQuestionIndex === QUESTION_LIMIT - 1) {
+            nextBtn.innerText = "結果を見る";
+        } else {
+            nextBtn.innerText = "次の問題へ";
+        }
+    }
+
+    // 次の問題へ
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < QUESTION_LIMIT) {
+            loadQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    // 結果表示
+    function showResult() {
+        quizScreen.classList.add('hidden');
+        resultScreen.classList.remove('hidden');
+        finalScoreEl.textContent = `${score} / ${QUESTION_LIMIT}`;
+        
+        let comment = '';
+        if (score === QUESTION_LIMIT) {
+            comment = "素晴らしい！あなたは藤田美術館のエキスパートです。";
+        } else if (score >= 7) {
+            comment = "なかなかの知識です！さらに詳しくなってみませんか？";
+        } else {
+            comment = "新たな発見がたくさんありましたね。またチャレンジしてください。";
+        }
+        resultCommentEl.textContent = comment;
+    }
+
+    // 配列からランダムにn個取得する関数（シャッフル）
+    function getRandomQuestions(array, num) {
+        const shuffled = [...array].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, Math.min(num, array.length));
+    }
+</script>
+
+</body>
+</html>
