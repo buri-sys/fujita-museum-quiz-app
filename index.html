@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FUJITA MUSEUM QUIZ - 500</title>
+    <title>FUJITA MUSEUM QUIZ - FIXED</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;500;700&display=swap" rel="stylesheet">
@@ -12,7 +12,6 @@
             --bg-color: #f0f0f0;
             --card-bg: #ffffff;
             --text-main: #2c2c2c;
-            --text-sub: #666666;
             --accent: #8c7b75;
             --highlight: #bfa46f;
             --correct: #2e7d32; /* 濃い緑 */
@@ -43,11 +42,9 @@
             padding: 40px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             border-radius: 8px;
-            position: relative;
-            overflow: hidden;
         }
 
-        /* ロゴ風ヘッダー */
+        /* ヘッダー */
         header {
             text-align: center;
             margin-bottom: 30px;
@@ -55,30 +52,13 @@
             padding-bottom: 20px;
         }
         
-        h1 {
-            font-size: 1.5rem;
-            letter-spacing: 0.2em;
-            margin: 0;
-            font-weight: 500;
-        }
+        h1 { font-size: 1.5rem; letter-spacing: 0.2em; margin: 0; font-weight: 500; }
+        .subtitle { font-size: 0.8rem; color: var(--accent); letter-spacing: 0.1em; margin-top: 5px; }
 
-        .subtitle {
-            font-size: 0.8rem;
-            color: var(--accent);
-            letter-spacing: 0.1em;
-            margin-top: 5px;
-        }
-
-        /* 画面制御 */
-        .screen { display: none; opacity: 0; transition: opacity 0.5s; }
-        .screen.active { display: block; opacity: 1; }
-
-        /* スタート画面 */
-        .intro-text {
-            text-align: center;
-            font-size: 0.95rem;
-            margin-bottom: 30px;
-        }
+        /* 画面切り替え */
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* クイズ画面 */
         .quiz-header {
@@ -91,7 +71,7 @@
         }
 
         .category-tag {
-            background: var(--bg-color);
+            background: #eee;
             padding: 4px 12px;
             border-radius: 20px;
             font-weight: bold;
@@ -119,6 +99,7 @@
             border-radius: 4px;
             color: var(--text-main);
             position: relative;
+            width: 100%;
         }
 
         .btn:hover {
@@ -126,63 +107,74 @@
             border-color: var(--accent);
         }
 
-        .btn.disabled { pointer-events: none; opacity: 0.7; }
-
-        /* 正解・不正解時のボタン装飾 */
+        /* ★ここを修正: 色の反映を強制 (!important) */
         .btn.correct-ans {
-            background-color: var(--correct);
-            color: white;
-            border-color: var(--correct);
+            background-color: var(--correct) !important;
+            border-color: var(--correct) !important;
+            color: white !important;
             font-weight: bold;
         }
+        
+        /* 正解マーク */
         .btn.correct-ans::after {
             content: "⭕️";
             position: absolute;
             right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .btn.wrong-ans {
-            background-color: var(--wrong);
-            color: white;
-            border-color: var(--wrong);
+            background-color: var(--wrong) !important;
+            border-color: var(--wrong) !important;
+            color: white !important;
+            opacity: 0.6;
         }
+        
+        /* 不正解マーク */
         .btn.wrong-ans::after {
             content: "❌";
             position: absolute;
             right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
-        /* 判定表示エリア（新設） */
+        /* 選択後はクリック不可にする */
+        .options.disabled-all .btn {
+            pointer-events: none;
+        }
+
+        /* 判定表示エリア */
         #result-indicator {
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
-            margin-top: 25px;
-            display: none;
+            margin: 20px 0;
             padding: 10px;
             border-radius: 4px;
+            display: none;
         }
-        .res-correct { color: var(--correct); background: var(--correct-bg); }
-        .res-wrong { color: var(--wrong); background: var(--wrong-bg); }
+        .res-correct { color: var(--correct); background: var(--correct-bg); border: 1px solid var(--correct); }
+        .res-wrong { color: var(--wrong); background: var(--wrong-bg); border: 1px solid var(--wrong); }
 
         /* 解説エリア */
         .explanation {
             margin-top: 15px;
             padding: 20px;
             background: #f9f9f9;
-            border-left: 5px solid #ccc; /* デフォルト */
+            border-left: 5px solid #ccc;
             display: none;
             font-size: 0.9rem;
         }
 
-        /* 解説の枠色も変化させる */
         .explanation.is-correct { border-left-color: var(--correct); background-color: var(--correct-bg); }
         .explanation.is-wrong { border-left-color: var(--wrong); background-color: var(--wrong-bg); }
 
         .exp-title { display: block; font-weight: bold; margin-bottom: 5px; }
         .source { display: block; text-align: right; font-size: 0.75rem; color: #999; margin-top: 10px; font-style: italic; }
 
-        /* コントロールボタン */
+        /* ボタン */
         .action-btn {
             display: block;
             width: 100%;
@@ -194,23 +186,13 @@
             font-size: 1rem;
             cursor: pointer;
             text-align: center;
-            letter-spacing: 0.1em;
             border-radius: 4px;
         }
-        
         .action-btn:hover { opacity: 0.9; }
 
         /* 結果画面 */
-        .result-score {
-            font-size: 4rem;
-            text-align: center;
-            color: var(--highlight);
-            font-weight: 300;
-            margin: 20px 0;
-        }
-        
+        .result-score { font-size: 4rem; text-align: center; color: var(--highlight); margin: 20px 0; }
         .result-msg { text-align: center; margin-bottom: 30px; }
-
     </style>
 </head>
 <body>
@@ -222,17 +204,16 @@
     </header>
 
     <div id="start-screen" class="screen active">
-        <p class="intro-text">
-            入門50選・蔵出50選・ART TALK・館長コラム・施設情報。<br>
-            全領域からランダムに出題される10問に挑戦。<br>
-            あなたの「美の知識」を試してみましょう。
+        <p style="text-align: center; margin-bottom: 30px;">
+            藤田美術館の全領域からランダムに出題。<br>
+            あなたの知識を試してみましょう。
         </p>
-        <button class="action-btn" onclick="app.start()">START</button>
+        <button class="action-btn" onclick="app.start()">START QUIZ</button>
     </div>
 
     <div id="quiz-screen" class="screen">
         <div class="quiz-header">
-            <span id="progress">Q 1 / 10</span>
+            <span id="progress">Q 1</span>
             <span id="category" class="category-tag">Category</span>
         </div>
         
@@ -252,7 +233,7 @@
     </div>
 
     <div id="result-screen" class="screen">
-        <h2 style="text-align:center; font-weight:500;">RESULT</h2>
+        <h2 style="text-align:center;">RESULT</h2>
         <div id="score-display" class="result-score">0</div>
         <p id="result-comment" class="result-msg"></p>
         <button class="action-btn" onclick="app.reset()">もう一度挑戦する</button>
@@ -260,159 +241,132 @@
 </div>
 
 <script>
-/**
- * FUJITA MUSEUM QUIZ DATA
- * サンプルデータ (実際にはここにデータを追加して500問にします)
- */
+/* 問題データ (サンプル) */
 const quizData = [
-    // 入門50選
-    { category: "入門50選", q: "茶道において「茶入（ちゃいれ）」とは、主に何を入れるための道具ですか？", a: ["濃茶（こいちゃ）", "薄茶（うすちゃ）", "お湯", "お菓子"], correct: 0, exp: "茶入は、抹茶の中でも「濃茶」を入れるための陶製などの小壺です。薄茶を入れる容器は「薄茶器（棗など）」と呼び区別されます。", source: "入門50選：茶入" },
-    { category: "入門50選", q: "掛軸などを扱う際、作品を傷めないために矢筈（やはず）を使って行う動作は？", a: ["掛軸を掛ける・はずす", "掛軸の埃を払う", "掛軸を巻く", "掛軸の紐を結ぶ"], correct: 0, exp: "矢筈（やはず）は、高い位置にある釘やフックに掛軸の紐（掛緒）を掛けたり、外したりする際に使用する棒状の道具です。", source: "入門50選：矢筈" },
-    
-    // 蔵出50選
-    { category: "蔵出50選", q: "国宝「曜変天目茶碗」。その最大の特徴である、器の内側に現れる星のような斑紋は何と呼ばれますか？", a: ["星紋", "曜変（ようへん）", "油滴", "禾目（のぎめ）"], correct: 1, exp: "光彩が輝くその様子から「曜変」と呼ばれます。世界に現存する3碗すべてが日本にあり、その1つが藤田美術館に所蔵されています。", source: "蔵出50選：曜変天目茶碗" },
-    { category: "蔵出50選", q: "「交趾大亀香合」は、何の動物を模した香合ですか？", a: ["亀", "鶴", "龍", "獅子"], correct: 0, exp: "背中に小亀を乗せた親亀の姿をした香合です。型物香合番付で行司役（最高位）とされる名品です。", source: "蔵出50選：交趾大亀香合" },
-
-    // ART TALK
-    { category: "ART TALK", q: "ART TALKなどで語られる、美術品を鑑賞する際の藤田美術館流のスタンスとして最も適切なのは？", a: ["自分の直感で楽しむ", "年号を暗記する", "作者の経歴をまず調べる", "価格を推測する"], correct: 0, exp: "知識も大切ですが、まずは目の前のモノと向き合い、「面白い」「綺麗」「不思議」といった自分の直感を大切にすることを推奨しています。", source: "ART TALK：鑑賞の心得" },
-    { category: "ART TALK", q: "野々村仁清の「色絵藤花茶壺」。ART TALKなどで語られる、この壺の画期的な点は？", a: ["ロクロ成形の薄さと絵画的な絵付け", "鉄で作られていること", "蓋が自動で開くこと", "海外で作られたこと"], correct: 0, exp: "仁清は、ロクロを使って極めて薄く均整の取れた陶器を作り、そこにまるで絵画のような色絵を施した点が革新的でした。", source: "ART TALK：仁清" },
-
-    // 館長のアート探訪
-    { category: "館長のアート探訪", q: "藤田美術館のリニューアルにあたり、館長が目指した美術館のあり方は「閉ざされた蔵」ではなく、「〇〇た蔵」。〇〇に入るのは？", a: ["開かれ", "隠され", "彩られ", "壊され"], correct: 0, exp: "地域や人々に対してオープンであり、美術品を身近に感じられる「開かれた蔵」をコンセプトとしています。", source: "館長のアート探訪：建築" },
-    { category: "館長のアート探訪", q: "新しい藤田美術館の建築において、旧美術館から継承され、再利用されている部材は？", a: ["多宝塔や蔵の扉・梁", "自動ドア", "蛍光灯", "コンクリート"], correct: 0, exp: "庭園の多宝塔や、旧蔵の扉、梁（はり）などが新しい建物の中に組み込まれ、歴史と記憶を継承しています。", source: "館長のアート探訪：継承" },
-
-    // 施設・Web
-    { category: "施設・Web", q: "藤田美術館のエントランスにある「あみじま茶屋」。ここでお茶を点てているのは誰？", a: ["美術館のスタッフやお茶の先生", "ロボット", "近所のコンビニ店員", "茶道を知らないアルバイト"], correct: 0, exp: "あみじま茶屋では、茶道の心得があるスタッフや先生方が、一杯ずつ丁寧にお茶を点てて提供しています。", source: "あみじま茶屋" },
-    { category: "施設・Web", q: "藤田美術館のキャッシュレス決済対応について、正しいのは？", a: ["完全キャッシュレス（現金不可）", "現金のみ", "切手払いのみ", "物々交換"], correct: 0, exp: "藤田美術館（入館料・あみじま茶屋・ショップ）は、現金を扱わない完全キャッシュレス決済を導入しています。", source: "来館のご案内：決済" },
-    // ★ここにさらにデータを追加
+    { category: "入門50選", q: "茶道において「茶入」とは、主に何を入れるための道具？", a: ["濃茶", "薄茶", "お湯", "お菓子"], correct: 0, exp: "茶入は、抹茶の中でも「濃茶」を入れるための陶製などの小壺です。", source: "入門50選" },
+    { category: "蔵出50選", q: "国宝「曜変天目茶碗」。器の内側に現れる斑紋は何と呼ばれる？", a: ["星紋", "曜変", "油滴", "禾目"], correct: 1, exp: "光彩が輝くその様子から「曜変」と呼ばれます。", source: "蔵出50選" },
+    { category: "ART TALK", q: "野々村仁清の「色絵藤花茶壺」。仁清の特徴である成形方法は？", a: ["ロクロ成形", "手びねり", "型押し", "鋳造"], correct: 0, exp: "仁清はロクロの名手であり、極めて薄く均整の取れた陶器を作りました。", source: "ART TALK" },
+    { category: "施設", q: "「あみじま茶屋」のだんごは、どのように提供される？", a: ["その場で焼いて提供", "冷凍で提供", "作り置き", "真空パック"], correct: 0, exp: "注文を受けてから目の前で焼き、温かい状態で提供しています。", source: "あみじま茶屋" },
+    { category: "歴史", q: "藤田美術館の創設者・藤田傳三郎の号は？", a: ["香雪", "鈍翁", "耳庵", "三渓"], correct: 0, exp: "藤田傳三郎は「香雪」と号しました。", source: "美術館の歴史" }
 ];
 
 const app = {
-    currentQuestions: [],
-    currentIndex: 0,
+    questions: [],
+    index: 0,
     score: 0,
-    TOTAL_QUESTIONS: 5, // デモ用に5問に設定（データが増えたら10に変更してください）
+    MAX_Q: 5, // 出題数
 
     start: function() {
-        document.getElementById('start-screen').classList.remove('active');
-        document.getElementById('result-screen').classList.remove('active');
+        // 画面リセット
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         document.getElementById('quiz-screen').classList.add('active');
-        
-        // 全データからランダムに抽出
-        this.currentQuestions = this.shuffleArray([...quizData]).slice(0, this.TOTAL_QUESTIONS);
-        this.currentIndex = 0;
+
+        // データシャッフル
+        this.questions = this.shuffle([...quizData]).slice(0, this.MAX_Q);
+        this.index = 0;
         this.score = 0;
-        
-        this.loadQuestion();
+        this.loadQ();
     },
 
-    loadQuestion: function() {
-        const q = this.currentQuestions[this.currentIndex];
+    loadQ: function() {
+        const data = this.questions[this.index];
         
-        document.getElementById('progress').innerText = `Q ${this.currentIndex + 1} / ${this.TOTAL_QUESTIONS}`;
-        document.getElementById('category').innerText = q.category;
-        document.getElementById('question-text').innerText = q.q;
-        
-        // リセット
+        // テキストセット
+        document.getElementById('progress').innerText = `Q ${this.index + 1} / ${this.MAX_Q}`;
+        document.getElementById('category').innerText = data.category;
+        document.getElementById('question-text').innerText = data.q;
+
+        // 表示リセット
         document.getElementById('explanation-box').style.display = 'none';
-        document.getElementById('explanation-box').className = 'explanation'; // クラスリセット
+        document.getElementById('explanation-box').className = 'explanation'; 
         document.getElementById('result-indicator').style.display = 'none';
         document.getElementById('next-btn').style.display = 'none';
-
-        const optionsContainer = document.getElementById('options-container');
-        optionsContainer.innerHTML = '';
         
-        q.a.forEach((optText, idx) => {
+        // 選択肢コンテナ
+        const container = document.getElementById('options-container');
+        container.className = 'options'; // disabled-allを削除
+        container.innerHTML = '';
+
+        // ボタン生成
+        data.a.forEach((ans, i) => {
             const btn = document.createElement('button');
             btn.className = 'btn';
-            btn.innerText = optText;
-            btn.onclick = () => this.checkAnswer(idx, btn);
-            optionsContainer.appendChild(btn);
+            btn.innerText = ans;
+            btn.onclick = () => this.check(i, btn);
+            container.appendChild(btn);
         });
     },
 
-    checkAnswer: function(selectedIndex, btnElement) {
-        const q = this.currentQuestions[this.currentIndex];
-        const buttons = document.querySelectorAll('.btn');
+    check: function(choiceIndex, btnElement) {
+        const data = this.questions[this.index];
+        const container = document.getElementById('options-container');
+        const buttons = container.querySelectorAll('.btn');
         const indicator = document.getElementById('result-indicator');
         const expBox = document.getElementById('explanation-box');
-        
-        // 全ボタン無効化
-        buttons.forEach(b => b.classList.add('disabled'));
 
-        if (selectedIndex === q.correct) {
-            // 正解の場合
+        // 二重クリック防止
+        container.classList.add('disabled-all');
+
+        if (choiceIndex === data.correct) {
+            // 正解
             this.score++;
-            btnElement.classList.add('correct-ans');
+            btnElement.classList.add('correct-ans'); // 緑にする
             
-            // 判定表示
             indicator.innerHTML = "⭕️ 正解！";
             indicator.className = "res-correct";
             indicator.style.display = "block";
-
-            // 解説ボックス装飾
-            expBox.classList.add('is-correct');
             
+            expBox.classList.add('is-correct');
         } else {
-            // 不正解の場合
-            btnElement.classList.add('wrong-ans');
-            buttons[q.correct].classList.add('correct-ans'); // 正解を表示
-
-            // 判定表示
+            // 不正解
+            btnElement.classList.add('wrong-ans'); // 赤にする
+            buttons[data.correct].classList.add('correct-ans'); // 正解を緑にする
+            
             indicator.innerHTML = "❌ 残念…";
             indicator.className = "res-wrong";
             indicator.style.display = "block";
-
-            // 解説ボックス装飾
+            
             expBox.classList.add('is-wrong');
         }
 
-        // 解説テキスト設定
-        document.getElementById('exp-text').innerText = q.exp;
-        document.getElementById('exp-source').innerText = `出典: ${q.source}`;
+        // 解説表示
+        document.getElementById('exp-text').innerText = data.exp;
+        document.getElementById('exp-source').innerText = `出典: ${data.source}`;
         expBox.style.display = 'block';
-        
+
+        // 次へボタン
         const nextBtn = document.getElementById('next-btn');
         nextBtn.style.display = 'block';
-        nextBtn.innerText = (this.currentIndex === this.TOTAL_QUESTIONS - 1) ? "結果を見る" : "次へ";
+        nextBtn.innerText = (this.index === this.MAX_Q - 1) ? "結果を見る" : "次の問題へ";
     },
 
     next: function() {
-        this.currentIndex++;
-        if (this.currentIndex < this.TOTAL_QUESTIONS) {
-            this.loadQuestion();
+        this.index++;
+        if (this.index < this.MAX_Q) {
+            this.loadQ();
         } else {
             this.showResult();
         }
     },
 
     showResult: function() {
-        document.getElementById('quiz-screen').classList.remove('active');
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         document.getElementById('result-screen').classList.add('active');
         
-        document.getElementById('score-display').innerText = `${this.score} / ${this.TOTAL_QUESTIONS}`;
+        document.getElementById('score-display').innerText = `${this.score} / ${this.MAX_Q}`;
         
         const msg = document.getElementById('result-comment');
-        if (this.score === this.TOTAL_QUESTIONS) {
-            msg.innerText = "完璧です！藤田美術館マスターですね！";
-        } else if (this.score >= this.TOTAL_QUESTIONS * 0.7) {
-            msg.innerText = "素晴らしい知識です！";
-        } else {
-            msg.innerText = "解説を読んで、さらに詳しくなりましょう。";
-        }
+        if (this.score === this.MAX_Q) msg.innerText = "完璧です！素晴らしい知識！";
+        else if (this.score >= this.MAX_Q * 0.7) msg.innerText = "惜しい！あと少しです。";
+        else msg.innerText = "また挑戦して知識を深めましょう。";
     },
-    
+
     reset: function() {
-        // スタート画面に戻さず即リスタートする場合
         this.start();
     },
 
-    shuffleArray: function(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
+    shuffle: function(arr) {
+        return arr.sort(() => Math.random() - 0.5);
     }
 };
 </script>
