@@ -13,10 +13,12 @@
             --card-bg: #ffffff;
             --text-main: #2c2c2c;
             --text-sub: #666666;
-            --accent: #8c7b75; /* 藤田美術館らしい落ち着いた色 */
-            --highlight: #bfa46f; /* 金泥のようなアクセント */
-            --correct: #5b7e91; /* 藍色 */
-            --wrong: #b85c5c;
+            --accent: #8c7b75;
+            --highlight: #bfa46f;
+            --correct: #2e7d32; /* 濃い緑 */
+            --correct-bg: #e8f5e9;
+            --wrong: #c62828;   /* 濃い赤 */
+            --wrong-bg: #ffebee;
         }
 
         * { box-sizing: border-box; }
@@ -40,7 +42,7 @@
             background: var(--card-bg);
             padding: 40px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            border-radius: 4px;
+            border-radius: 8px;
             position: relative;
             overflow: hidden;
         }
@@ -48,7 +50,7 @@
         /* ロゴ風ヘッダー */
         header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             border-bottom: 1px solid #eee;
             padding-bottom: 20px;
         }
@@ -114,8 +116,9 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
-            border-radius: 2px;
+            border-radius: 4px;
             color: var(--text-main);
+            position: relative;
         }
 
         .btn:hover {
@@ -123,448 +126,41 @@
             border-color: var(--accent);
         }
 
-        .btn.correct {
+        .btn.disabled { pointer-events: none; opacity: 0.7; }
+
+        /* 正解・不正解時のボタン装飾 */
+        .btn.correct-ans {
             background-color: var(--correct);
             color: white;
             border-color: var(--correct);
+            font-weight: bold;
+        }
+        .btn.correct-ans::after {
+            content: "⭕️";
+            position: absolute;
+            right: 15px;
         }
 
-        .btn.wrong {
+        .btn.wrong-ans {
             background-color: var(--wrong);
             color: white;
             border-color: var(--wrong);
         }
+        .btn.wrong-ans::after {
+            content: "❌";
+            position: absolute;
+            right: 15px;
+        }
 
-        .btn.disabled { pointer-events: none; }
-
-        /* 解説エリア */
-        .explanation {
+        /* 判定表示エリア（新設） */
+        #result-indicator {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
             margin-top: 25px;
-            background: #f9f9f9;
-            padding: 20px;
-            border-left: 3px solid var(--accent);
             display: none;
-            font-size: 0.9rem;
+            padding: 10px;
+            border-radius: 4px;
         }
-
-        .exp-title { display: block; font-weight: bold; color: var(--accent); margin-bottom: 5px; }
-        .source { display: block; text-align: right; font-size: 0.75rem; color: #999; margin-top: 10px; font-style: italic; }
-
-        /* コントロールボタン */
-        .action-btn {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            margin-top: 20px;
-            background: var(--text-main);
-            color: white;
-            border: none;
-            font-size: 1rem;
-            cursor: pointer;
-            text-align: center;
-            letter-spacing: 0.1em;
-        }
-        
-        .action-btn:hover { opacity: 0.9; }
-
-        /* 結果画面 */
-        .result-score {
-            font-size: 4rem;
-            text-align: center;
-            color: var(--highlight);
-            font-weight: 300;
-            margin: 20px 0;
-        }
-        
-        .result-msg { text-align: center; margin-bottom: 30px; }
-
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <header>
-        <h1>FUJITA MUSEUM</h1>
-        <div class="subtitle">Art & Knowledge Quiz</div>
-    </header>
-
-    <div id="start-screen" class="screen active">
-        <p class="intro-text">
-            入門50選・蔵出50選・ART TALK・館長コラム・施設情報。<br>
-            全領域からランダムに出題される10問に挑戦。<br>
-            あなたの「美の知識」を試してみましょう。
-        </p>
-        <button class="action-btn" onclick="app.start()">START</button>
-    </div>
-
-    <div id="quiz-screen" class="screen">
-        <div class="quiz-header">
-            <span id="progress">Q 1 / 10</span>
-            <span id="category" class="category-tag">Category</span>
-        </div>
-        <div id="question-text" class="question">Loading...</div>
-        <div id="options-container" class="options"></div>
-        
-        <div id="explanation-box" class="explanation">
-            <span class="exp-title">解説</span>
-            <span id="exp-text"></span>
-            <span id="exp-source" class="source"></span>
-        </div>
-
-        <button id="next-btn" class="action-btn" style="display:none;" onclick="app.next()">次へ</button>
-    </div>
-
-    <div id="result-screen" class="screen">
-        <h2 style="text-align:center; font-weight:500;">RESULT</h2>
-        <div id="score-display" class="result-score">0</div>
-        <p id="result-comment" class="result-msg"></p>
-        <button class="action-btn" onclick="app.reset()">もう一度挑戦する</button>
-    </div>
-</div>
-
-<script>
-/**
- * FUJITA MUSEUM QUIZ DATA
- * 目標: 各カテゴリ100問ずつ = 計500問
- * 現在: サンプルとして各カテゴリ5問ずつ搭載
- */
-const quizData = [
-    // ----------------------------------------------------
-    // 1. 入門50選 (Basic Knowledge)
-    // ----------------------------------------------------
-    {
-        category: "入門50選",
-        q: "茶道において「茶入（ちゃいれ）」とは、主に何を入れるための道具ですか？",
-        a: ["濃茶（こいちゃ）", "薄茶（うすちゃ）", "お湯", "お菓子"],
-        correct: 0,
-        exp: "茶入は、抹茶の中でも「濃茶」を入れるための陶製などの小壺です。薄茶を入れる容器は「薄茶器（棗など）」と呼び区別されます。",
-        source: "入門50選：茶入"
-    },
-    {
-        category: "入門50選",
-        q: "掛軸などを扱う際、作品を傷めないために矢筈（やはず）を使って行う動作は？",
-        a: ["掛軸を掛ける・はずす", "掛軸の埃を払う", "掛軸を巻く", "掛軸の紐を結ぶ"],
-        correct: 0,
-        exp: "矢筈（やはず）は、高い位置にある釘やフックに掛軸の紐（掛緒）を掛けたり、外したりする際に使用する棒状の道具です。",
-        source: "入門50選：矢筈"
-    },
-    {
-        category: "入門50選",
-        q: "茶道具の「仕覆（しふく）」とは、何のための道具ですか？",
-        a: ["茶入などを保護する袋", "お茶を点てる布", "茶碗を拭く布", "お菓子を乗せる紙"],
-        correct: 0,
-        exp: "仕覆は、茶入や茶碗などの大切な道具を保護するために仕立てられた袋です。名物裂（めいぶつぎれ）などが用いられ、鑑賞の対象ともなります。",
-        source: "入門50選：仕覆"
-    },
-    {
-        category: "入門50選",
-        q: "香合（こうごう）に入れる「香」の種類で、風炉の時期（5月〜10月頃）に用いるものは？",
-        a: ["木（白檀など）", "練香", "液体のお香", "花びら"],
-        correct: 0,
-        exp: "風炉の時期は香木の角割（かくわり）を用い、炉の時期（11月〜4月頃）には湿り気のある練香（ねりこう）を用います。",
-        source: "入門50選：香合"
-    },
-    {
-        category: "入門50選",
-        q: "茶碗の各部名称で、口をつける縁の部分を何と呼びますか？",
-        a: ["口造り（くちづくり）", "見込み", "高台（こうだい）", "腰（こし）"],
-        correct: 0,
-        exp: "茶碗の縁は「口造り（くちづくり）」と呼ばれます。口当たりや形状の変化が見どころの一つです。",
-        source: "入門50選：茶碗"
-    },
-
-    // ----------------------------------------------------
-    // 2. 蔵出50選 (Masterpieces & Hidden Gems)
-    // ----------------------------------------------------
-    {
-        category: "蔵出50選",
-        q: "国宝「曜変天目茶碗」。その最大の特徴である、器の内側に現れる星のような斑紋は何と呼ばれますか？",
-        a: ["星紋", "曜変（ようへん）", "油滴", "禾目（のぎめ）"],
-        correct: 1,
-        exp: "光彩が輝くその様子から「曜変」と呼ばれます。世界に現存する3碗すべてが日本にあり、その1つが藤田美術館に所蔵されています。",
-        source: "蔵出50選：曜変天目茶碗"
-    },
-    {
-        category: "蔵出50選",
-        q: "「交趾大亀香合（こうちおおがめこうごう）」は、何の動物を模した香合ですか？",
-        a: ["亀", "鶴", "龍", "獅子"],
-        correct: 0,
-        exp: "背中に小亀を乗せた親亀の姿をした香合です。型物香合番付で行司役（最高位）とされる名品です。",
-        source: "蔵出50選：交趾大亀香合"
-    },
-    {
-        category: "蔵出50選",
-        q: "仏教美術の名品「仏功徳蒔絵経箱」。この箱の中に収められていたものは？",
-        a: ["法華経", "仏像", "数珠", "袈裟"],
-        correct: 0,
-        exp: "この経箱は、藤原道長が発願した法華経などの経典を収めるために作られた、平安時代の蒔絵の優品です。",
-        source: "蔵出50選：仏功徳蒔絵経箱"
-    },
-    {
-        category: "蔵出50選",
-        q: "国宝「玄奘三蔵絵」。この絵巻物が描いているのは、誰の生涯ですか？",
-        a: ["玄奘（三蔵法師）", "空海", "聖徳太子", "鑑真"],
-        correct: 0,
-        exp: "『西遊記』の三蔵法師のモデルとなった唐の高僧・玄奘が、インドへ経典を求めて旅する様子が描かれています。",
-        source: "蔵出50選：玄奘三蔵絵"
-    },
-    {
-        category: "蔵出50選",
-        q: "茶道具の名品、茶杓「弱法師（よろぼし）」。この銘の由来となった能の演目は？",
-        a: ["弱法師", "高砂", "道成寺", "安宅"],
-        correct: 0,
-        exp: "小堀遠州が、筒に盲目の少年を描いた能「弱法師」の絵があったこと、あるいは茶杓の景色から連想して名付けたとされています。",
-        source: "蔵出50選：茶杓 弱法師"
-    },
-
-    // ----------------------------------------------------
-    // 3. ART TALK (Curator & Guest Dialogue)
-    // ----------------------------------------------------
-    {
-        category: "ART TALK",
-        q: "ART TALKなどの対談で語られる、美術品を鑑賞する際の藤田美術館流のスタンスとして最も適切なのは？",
-        a: ["自分の直感で楽しむ", "年号を暗記する", "作者の経歴をまず調べる", "価格を推測する"],
-        correct: 0,
-        exp: "知識も大切ですが、まずは目の前のモノと向き合い、「面白い」「綺麗」「不思議」といった自分の直感を大切にすることを推奨しています。",
-        source: "ART TALK：鑑賞の心得"
-    },
-    {
-        category: "ART TALK",
-        q: "学芸員が解説する「茶壺」の役割。茶壺は本来、何を入れて運ぶための「コンテナ」だった？",
-        a: ["葉茶（お茶の葉）", "水", "お酒", "薬"],
-        correct: 0,
-        exp: "茶壺は、挽く前の「葉茶」を詰め、口を厳重に封じて運搬・保管するための容器でした。",
-        source: "ART TALK：茶壺"
-    },
-    {
-        category: "ART TALK",
-        q: "近代の数寄者たちが集めた「茶道具」。彼らが既存の価値観にとらわれず、日用品などを茶道具に見立てた行為は何と呼ばれる？",
-        a: ["見立て", "捏造", "模倣", "転用"],
-        correct: 0,
-        exp: "本来は茶道具でないものを、自分の美意識で茶道具として取り上げることを「見立て」と呼び、茶の湯の創造性の根幹となっています。",
-        source: "ART TALK：見立ての世界"
-    },
-    {
-        category: "ART TALK",
-        q: "野々村仁清の「色絵藤花茶壺」。ART TALKなどで語られる、この壺の画期的な点は？",
-        a: ["ロクロ成形の薄さと絵画的な絵付け", "鉄で作られていること", "蓋が自動で開くこと", "海外で作られたこと"],
-        correct: 0,
-        exp: "仁清は、ロクロを使って極めて薄く均整の取れた陶器を作り、そこにまるで絵画のような色絵を施した点が革新的でした。",
-        source: "ART TALK：仁清"
-    },
-    {
-        category: "ART TALK",
-        q: "絵巻物を見る際、物語の進行（時間経過）は通常、どちらからどちらへ流れる？",
-        a: ["右から左", "左から右", "上から下", "下から上"],
-        correct: 0,
-        exp: "日本の絵巻物は通常、右から左へと広げていくことで、時間が進行するように描かれています。",
-        source: "ART TALK：絵巻"
-    },
-
-    // ----------------------------------------------------
-    // 4. 館長のアート探訪 (Director's Philosophy)
-    // ----------------------------------------------------
-    {
-        category: "館長のアート探訪",
-        q: "藤田美術館のリニューアルにあたり、館長が目指した美術館のあり方は「閉ざされた蔵」ではなく、「〇〇た蔵」。〇〇に入るのは？",
-        a: ["開かれ", "隠され", "彩られ", "壊され"],
-        correct: 0,
-        exp: "地域や人々に対してオープンであり、美術品を身近に感じられる「開かれた蔵」をコンセプトとしています。",
-        source: "館長のアート探訪：建築"
-    },
-    {
-        category: "館長のアート探訪",
-        q: "館長がコラムで触れる、美術館における「ガラスケース」の存在について。現在の藤田美術館の展示の特徴は？",
-        a: ["可能な限りガラスの存在感を消している", "色付きガラスを使っている", "全てマジックミラーにしている", "ステンドグラスを使用している"],
-        correct: 0,
-        exp: "高透過ガラスを使用し、照明を工夫することで、ガラスの存在を感じさせず、直にモノと対面しているような展示環境を実現しています。",
-        source: "館長のアート探訪：展示環境"
-    },
-    {
-        category: "館長のアート探訪",
-        q: "藤田傳三郎が集めたコレクションが、散逸せずに美術館として残った大きな理由の一つとして挙げられるのは？",
-        a: ["長男・平太郎、次男・徳次郎の尽力", "国が買い上げたから", "偶然忘れ去られていたから", "地下深くに埋められていたから"],
-        correct: 0,
-        exp: "傳三郎の没後、その遺志を継いだ息子たち（平太郎、徳次郎）がコレクションを守り、美術館を設立したことが今日につながっています。",
-        source: "館長のアート探訪：歴史"
-    },
-    {
-        category: "館長のアート探訪",
-        q: "館長が大切にしている、来館者に美術館で過ごしてほしい時間のイメージは？",
-        a: ["心静かに「もの」と対話する時間", "大声で議論する時間", "ひたすら写真を撮る時間", "急いで通り過ぎる時間"],
-        correct: 0,
-        exp: "情報過多な現代において、スマホなどを置き、静かに目の前の作品と向き合う豊かな時間を提案しています。",
-        source: "館長のアート探訪：コンセプト"
-    },
-    {
-        category: "館長のアート探訪",
-        q: "新しい藤田美術館の建築において、旧美術館から継承され、再利用されている部材は？",
-        a: ["多宝塔や蔵の扉・梁", "自動ドア", "蛍光灯", "コンクリート"],
-        correct: 0,
-        exp: "庭園の多宝塔や、旧蔵の扉、梁（はり）などが新しい建物の中に組み込まれ、歴史と記憶を継承しています。",
-        source: "館長のアート探訪：継承"
-    },
-
-    // ----------------------------------------------------
-    // 5. 施設情報・Webその他 (General Info)
-    // ----------------------------------------------------
-    {
-        category: "施設・Web",
-        q: "藤田美術館のエントランスにある「あみじま茶屋」。ここでお茶を点てているのは誰？",
-        a: ["美術館のスタッフやお茶の先生", "ロボット", "近所のコンビニ店員", "茶道を知らないアルバイト"],
-        correct: 0,
-        exp: "あみじま茶屋では、茶道の心得があるスタッフや先生方が、一杯ずつ丁寧にお茶を点てて提供しています。",
-        source: "あみじま茶屋"
-    },
-    {
-        category: "施設・Web",
-        q: "あみじま茶屋で提供される「だんご」。醤油とあんこ、基本は何本セット？",
-        a: ["2本", "1本", "5本", "10本"],
-        correct: 0,
-        exp: "基本のセットは、醤油とあんこの2本セットとお茶の組み合わせです（追加注文も可能）。",
-        source: "あみじま茶屋"
-    },
-    {
-        category: "施設・Web",
-        q: "藤田美術館は、展示替えのために長期休館することがありますか？",
-        a: ["ある（数ヶ月単位で閉まることがある）", "ない（365日開いている）", "夜間のみ営業", "夏休みだけ開館"],
-        correct: 0,
-        exp: "季節ごとのテーマに合わせて展示替えを行うため、展示替え期間中は休館となります。Webサイトでの確認が必要です。",
-        source: "来館のご案内"
-    },
-    {
-        category: "施設・Web",
-        q: "藤田美術館のキャッシュレス決済対応について、正しいのは？",
-        a: ["完全キャッシュレス（現金不可）", "現金のみ", "切手払いのみ", "物々交換"],
-        correct: 0,
-        exp: "藤田美術館（入館料・あみじま茶屋・ショップ）は、現金を扱わない完全キャッシュレス決済を導入しています。",
-        source: "来館のご案内：決済"
-    },
-    {
-        category: "施設・Web",
-        q: "藤田美術館の所在地である大阪市の地名「網島（あみじま）」。近松門左衛門の有名な浄瑠璃作品との関連で知られる作品名は？",
-        a: ["心中天網島", "曽根崎心中", "冥途の飛脚", "女殺油地獄"],
-        correct: 0,
-        exp: "この地は、近松門左衛門の人形浄瑠璃『心中天網島（しんじゅうてんのあみじま）』の舞台となった場所としても知られています。",
-        source: "Web情報：土地の歴史"
-    }
-];
-
-// アプリのロジック
-const app = {
-    currentQuestions: [],
-    currentIndex: 0,
-    score: 0,
-    TOTAL_QUESTIONS: 10, // 1プレイあたりの出題数
-
-    init: function() {
-        // 初期化処理があればここ
-    },
-
-    start: function() {
-        document.getElementById('start-screen').classList.remove('active');
-        document.getElementById('result-screen').classList.remove('active');
-        document.getElementById('quiz-screen').classList.add('active');
-        
-        // 全データからランダムに10問抽出
-        this.currentQuestions = this.shuffleArray([...quizData]).slice(0, this.TOTAL_QUESTIONS);
-        this.currentIndex = 0;
-        this.score = 0;
-        
-        this.loadQuestion();
-    },
-
-    loadQuestion: function() {
-        const q = this.currentQuestions[this.currentIndex];
-        
-        // 画面更新
-        document.getElementById('progress').innerText = `Q ${this.currentIndex + 1} / ${this.TOTAL_QUESTIONS}`;
-        document.getElementById('category').innerText = q.category;
-        document.getElementById('question-text').innerText = q.q;
-        
-        // 解説非表示・次へボタン非表示
-        document.getElementById('explanation-box').style.display = 'none';
-        document.getElementById('next-btn').style.display = 'none';
-
-        // 選択肢生成
-        const optionsContainer = document.getElementById('options-container');
-        optionsContainer.innerHTML = '';
-        
-        // 選択肢もランダム順に表示したい場合はここでシャッフル可能だが、
-        // 今回はデータ順（正解が固定位置にならないようデータ側で調整推奨）あるいは
-        // ここでインデックス管理してシャッフルする。
-        // 簡易的にボタン生成時に正誤判定を持たせる
-        q.a.forEach((optText, idx) => {
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.innerText = optText;
-            btn.onclick = () => this.checkAnswer(idx, btn);
-            optionsContainer.appendChild(btn);
-        });
-    },
-
-    checkAnswer: function(selectedIndex, btnElement) {
-        const q = this.currentQuestions[this.currentIndex];
-        const buttons = document.querySelectorAll('.btn');
-        
-        // 全ボタン無効化
-        buttons.forEach(b => b.classList.add('disabled'));
-
-        if (selectedIndex === q.correct) {
-            btnElement.classList.add('correct');
-            this.score++;
-        } else {
-            btnElement.classList.add('wrong');
-            // 正解のボタンをハイライト
-            buttons[q.correct].classList.add('correct');
-        }
-
-        // 解説表示
-        document.getElementById('exp-text').innerText = q.exp;
-        document.getElementById('exp-source').innerText = `出典: ${q.source}`;
-        document.getElementById('explanation-box').style.display = 'block';
-        
-        // 次へボタン表示
-        const nextBtn = document.getElementById('next-btn');
-        nextBtn.style.display = 'block';
-        nextBtn.innerText = (this.currentIndex === this.TOTAL_QUESTIONS - 1) ? "結果を見る" : "次へ";
-    },
-
-    next: function() {
-        this.currentIndex++;
-        if (this.currentIndex < this.TOTAL_QUESTIONS) {
-            this.loadQuestion();
-        } else {
-            this.showResult();
-        }
-    },
-
-    showResult: function() {
-        document.getElementById('quiz-screen').classList.remove('active');
-        document.getElementById('result-screen').classList.add('active');
-        
-        const scoreDisplay = document.getElementById('score-display');
-        scoreDisplay.innerText = `${this.score} / ${this.TOTAL_QUESTIONS}`;
-        
-        const msg = document.getElementById('result-comment');
-        if (this.score === this.TOTAL_QUESTIONS) {
-            msg.innerText = "全問正解！素晴らしい藤田美術館通です。";
-        } else if (this.score >= 8) {
-            msg.innerText = "おしい！かなりの知識をお持ちです。";
-        } else {
-            msg.innerText = "解説を読んで、さらに知識を深めましょう。";
-        }
-    },
-
-    shuffleArray: function(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
-};
-</script>
-
-</body>
-</html>
+        .res-correct { color: var(--correct); background: var(--correct-bg); }
+        .res-wrong { color: var(--wrong);
